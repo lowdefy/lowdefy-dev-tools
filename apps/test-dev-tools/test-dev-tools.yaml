@@ -1,0 +1,75 @@
+id: test-dev-tools
+type: PageHeaderMenu
+properties:
+  title: Test Dev Tools
+layout:
+  contentGutter: 16
+  contentJustify: center
+requests:
+  - id: test_request
+    type: MongoDBAggregation
+    connectionId: test
+    properties:
+      pipeline:
+        - $match: {}
+events:
+  onMount:
+    - id: set_test_state
+      type: SetState
+      params:
+        test_state: Hello, World!
+    - id: get_test_request
+      type: Request
+      params: test_request
+blocks:
+  - id: emoji_indicator
+    type: Title
+    style:
+      _object.assign:
+        - position: fixed
+          z-index: 1
+          bottom: 50
+        - _if:
+            test:
+              _eq:
+                - _state: lowdefy_dev_tools.placement
+                - left
+            then:
+              right: 50
+            else:
+              left: 50
+    properties:
+      content: 👇🤔
+  - id: test_box
+    type: Box
+    layout:
+      flex: 0 1 auto
+    blocks:
+      - id: test_state_markdown
+        type: MarkdownWithCode
+        properties:
+          content:
+            _nunjucks:
+              template: |
+                # Test State
+                ```yaml
+                {{ test_state }}
+                ```
+              on:
+                test_state:
+                  _yaml.stringify:
+                    - _state: test_state
+      - id: test_request_markdown
+        type: MarkdownWithCode
+        properties:
+          content:
+            _nunjucks:
+              template: |
+                # Test Request
+                ```yaml
+                {{ test_request }}
+                ```
+              on:
+                test_request:
+                  _yaml.stringify:
+                    - _request: test_request

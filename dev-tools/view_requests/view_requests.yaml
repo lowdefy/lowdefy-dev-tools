@@ -1,0 +1,374 @@
+id: view_requests
+type: Box
+layout:
+  contentGutter: 8
+style:
+  padding: 0px 10px
+blocks:
+  - id: request_path
+    type: Html
+    visible:
+      _ne:
+        - _state: lowdefy_dev_tools.requests.key
+        - null
+    properties:
+      html:
+        _nunjucks:
+          template: |
+            Request: <span style="color: {{ color }};">{{ request }}</span>
+          on:
+            request:
+              _state: lowdefy_dev_tools.requests.selected
+            color:
+              _state: lowdefy_dev_tools.color
+  - id: requests_tabs
+    type: Tabs
+    properties:
+      tabs:
+        - key: details
+          title: Details
+        - key: payload
+          title: Payload
+        - key: response
+          title: Response
+      extraAreaKey: extra
+    events:
+      onMount:
+        - id: set_requests_tabs
+          type: SetState
+          params:
+            lowdefy_dev_tools.requests.tab: details
+      onTabClick:
+        - id: set_requests_tabs
+          type: SetState
+          params:
+            lowdefy_dev_tools.requests.tab:
+              _event: key
+            lowdefy_dev_tools.requests.key: null
+            lowdefy_dev_tools.requests.selected: null
+    areas:
+      extra:
+        blocks:
+          - id: refetch_button
+            type: Button
+            visible:
+              _ne:
+                - _state: lowdefy_dev_tools.requests.key
+                - null
+            properties:
+              hideTitle: true
+              icon: AiOutlineReload
+              size: small
+              disabled:
+                _eq:
+                  - _state: lowdefy_dev_tools.requests.key
+                  - null
+            events:
+              onClick:
+                - id: refetch_request
+                  type: Request
+                  params:
+                    _state: lowdefy_dev_tools.requests.selected.0
+      details:
+        blocks:
+          - id: details_yaml
+            type: MarkdownWithCode
+            visible:
+              _ne:
+                - _state: lowdefy_dev_tools.requests.key
+                - null
+            style:
+              overflow-y: scroll
+              maxHeight: 250
+            properties:
+              content:
+                _nunjucks:
+                  template: |
+                    ```yaml
+                    {{ data | safe }}
+                    ```
+                  on:
+                    data:
+                      _yaml.stringify:
+                        - _array.map:
+                            - _array.filter:
+                                - _request_details:
+                                    _if_none:
+                                      - _state: lowdefy_dev_tools.requests.selected.0
+                                      - ''
+                                - _function:
+                                    __ne:
+                                      - __args: 0.blockId
+                                      - lowdefy_dev_tools.requests.selected
+                            - _function:
+                                __object.assign:
+                                  - __args: 0
+                                  - response:
+                                      __string.concat:
+                                        - __number.toString:
+                                            - __array.length:
+                                                __args: 0.response
+                                        - ' items'
+      payload:
+        blocks:
+          - id: payload_yaml
+            type: MarkdownWithCode
+            visible:
+              _ne:
+                - _state: lowdefy_dev_tools.requests.key
+                - null
+            style:
+              overflow-y: scroll
+              maxHeight: 250
+            properties:
+              content:
+                _nunjucks:
+                  template: |
+                    ```yaml
+                    {{ data | safe }}
+                    ```
+                  on:
+                    data:
+                      _yaml.stringify:
+                        - _array.map:
+                            - _array.filter:
+                                - _request_details:
+                                    _if_none:
+                                      - _state: lowdefy_dev_tools.requests.selected.0
+                                      - ''
+                                - _function:
+                                    __ne:
+                                      - __args: 0.blockId
+                                      - lowdefy_dev_tools.requests.selected
+                            - _function:
+                                payload:
+                                  __args: 0.payload
+      response:
+        blocks:
+          - id: response_box
+            type: Box
+            layout:
+              contentGutter: 8
+            blocks:
+              - id: response_yaml
+                type: MarkdownWithCode
+                visible:
+                  _ne:
+                    - _state: lowdefy_dev_tools.requests.key
+                    - null
+                style:
+                  overflow-y: scroll
+                  maxHeight: 250
+                properties:
+                  content:
+                    _nunjucks:
+                      template: |
+                        ```yaml
+                        {{ data | safe }}
+                        ```
+                      on:
+                        data:
+                          _yaml.stringify:
+                            - _array.map:
+                                - _array.filter:
+                                    - _request_details:
+                                        _if_none:
+                                          - _state: lowdefy_dev_tools.requests.selected.0
+                                          - ''
+                                    - _function:
+                                        __ne:
+                                          - __args: 0.blockId
+                                          - lowdefy_dev_tools.requests.selected
+                                - _function:
+                                    response:
+                                      __args: 0.response
+              - id: search_box
+                type: Box
+                visible:
+                  _ne:
+                    - _state: lowdefy_dev_tools.requests.key
+                    - null
+                layout:
+                  contentGutter: 8
+                blocks:
+                  - id: lowdefy_dev_tools.requests.search_response
+                    type: TextInput
+                    layout:
+                      flex: 1 0 auto
+                    properties:
+                      title: Search Response
+                      label:
+                        inline: true
+                    events:
+                      onChange:
+                        debounce:
+                          ms: 500
+                        try:
+                          - id: filter_search_response
+                            type: SetState
+                            params:
+                              lowdefy_dev_tools.requests.search_index: 0
+                              lowdefy_dev_tools.requests.search_list:
+                                _js: |
+                                  return scrollToMatch('response_yaml', 'span', state('lowdefy_dev_tools.requests.search_response'));
+
+                                  function scrollToMatch(divId, elementType, searchTerm) {
+                                    const div = document.getElementById(divId);
+                                    if (!div) return [];
+
+                                    const elements = div.getElementsByTagName(elementType);
+                                    const matches = [];
+
+                                    // Find all matches containing the searchTerm (case insensitive)
+                                    for (let i = 0; i < elements.length; i++) {
+                                      const elementText = elements[i].textContent.trim();
+                                      const regex = new RegExp(searchTerm, 'i');
+                                      if (regex.test(elementText)) {
+                                        matches.push(elements[i]);
+                                      }
+                                    }
+
+                                    // Scroll to the first match and highlight it
+                                    if (matches.length > 0) {
+                                      matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                                      matches[0].style.backgroundColor = 'yellow';
+
+                                      setTimeout(() => {
+                                        matches[0].style.backgroundColor = '';
+                                      }, 2000);
+                                    }
+
+                                    return matches.map((el, index) => ({
+                                      textContent: el.textContent,
+                                      index: index
+                                    }));
+                                  }
+                  - id: next_response
+                    type: Button
+                    layout:
+                      flex: 0 1 auto
+                    properties:
+                      hideTitle: true
+                      icon: AiOutlineArrowDown
+                    events:
+                      onClick:
+                        debounce:
+                          ms: 500
+                        catch:
+                          - id: throw_no_match
+                            type: Throw
+                            params:
+                              throw: true
+                              message: No matches found.
+                        try:
+                          - id: set_index
+                            type: SetState
+                            params:
+                              lowdefy_dev_tools.requests.search_index:
+                                _js: |
+                                  const matches = state('lowdefy_dev_tools.requests.search_list');
+                                  const div = document.getElementById('response_yaml');
+
+                                  return scrollToNextMatch(state('lowdefy_dev_tools.requests.search_index'));
+
+                                  function scrollToMatch(index) {
+                                    const match = matches[index];
+                                    const elements = div.getElementsByTagName('span');
+                                    const searchTerm = state('lowdefy_dev_tools.requests.search_response');
+
+                                    const elementsMatch = [];
+                                    for (let i = 0; i < elements.length; i++) {
+                                      const elementText = elements[i].textContent.trim();
+                                      const regex = new RegExp(searchTerm, 'i');
+                                      if (regex.test(elementText)) {
+                                        elementsMatch.push(elements[i]);
+                                      }
+                                    }
+
+                                    // Scroll to the match and highlight it
+                                    if (match.index >= 0 && match.index < elementsMatch.length) {
+                                      elementsMatch[match.index].style.backgroundColor = 'yellow';
+
+                                      elementsMatch[match.index].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+                                      setTimeout(() => {
+                                        elementsMatch[match.index].style.backgroundColor = '';
+                                      }, 2000);
+                                    }
+
+                                    return index;
+                                  }
+
+                                  function scrollToNextMatch(index) {
+                                    if (matches.length === 0) {
+                                      throw new Error('No matches found.');
+                                      return;
+                                    }
+
+                                    const nextIndex = (index + 1) % matches.length;
+
+                                    return scrollToMatch(nextIndex);
+                                  }
+  - id: no_request_selected
+    type: Html
+    visible:
+      _eq:
+        - _array.length:
+            _if_none:
+              - _state: lowdefy_dev_tools.requests.selected
+              - []
+        - 0
+    properties:
+      html: |
+        <div style="text-align: center; color:#d9d9d9; padding-bottom: 10px;">
+          <div style="font-size: 1.25rem;">No Selected Request</div>
+          <div >Select a request in the list to view its details.</div>
+        </div>
+  - id: divider
+    type: Divider
+  - id: lowdefy_dev_tools.requests.selected
+    type: TreeSelector
+    properties:
+      options:
+        _if_none:
+          - _state: lowdefy_dev_tools.requests.options
+          - []
+    events:
+      onChange:
+        - id: set_key
+          type: SetState
+          skip:
+            _lte:
+              - _array.length:
+                  _if_none:
+                    - _state: lowdefy_dev_tools.requests.selected
+                    - []
+              - 0
+          params:
+            lowdefy_dev_tools.requests.key:
+              _state: lowdefy_dev_tools.requests.selected.0
+        - id: reset
+          type: SetState
+          skip:
+            _gt:
+              - _array.length:
+                  _if_none:
+                    - _state: lowdefy_dev_tools.requests.selected
+                    - []
+              - 0
+          params:
+            lowdefy_dev_tools.requests.key: null
+      onMountAsync:
+        - id: set_options
+          type: SetState
+          params:
+            lowdefy_dev_tools.requests.options:
+              _array.map:
+                - _object.keys:
+                    _request_details: true
+                - _function:
+                    label:
+                      __args: 0
+                    value:
+                      __args: 0

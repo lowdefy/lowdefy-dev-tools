@@ -1,0 +1,17 @@
+id: view_code_editor
+type: Box
+layout:
+  contentGutter: 8
+style:
+  padding: 0px 10px
+blocks:
+  - id: code_editor
+    type: CodeEditor
+    properties:
+      theme: light
+      value: |
+        Under construction 🚧👷‍♂️:
+          - This is still a work in progress.
+          - Come back later!
+      options:
+        readOnly: true

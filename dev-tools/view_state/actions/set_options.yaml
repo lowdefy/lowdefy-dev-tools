@@ -1,0 +1,67 @@
+id: set_options
+type: SetState
+params:
+  lowdefy_dev_tools.state.options:
+    _js: |
+      let data;
+
+      switch (state('lowdefy_dev_tools.state.tab')) {
+        case 'global':
+          data = lowdefyGlobal(true);
+          break;
+        case 'user':
+          data = user(true);
+          break;
+        default:
+          data = state(true);
+      }
+
+      if (!data) {
+        return null;
+      }
+
+      const color = state('lowdefy_dev_tools.color');
+
+      // Hide Dev Tools state
+      removeKeysFromObject(data, 'lowdefy_dev_tools');
+
+      return convertToObjectArray(data);
+
+      /*
+        Given an object of objects (state)
+        Return an object array with label, value, children as array item keys
+        This data structure is required for the TreeSelector options
+        Store the key on the value to rebuild the key path if needed
+      */
+      function convertToObjectArray(data) {
+        return Object.keys(data).map(key => {
+          const item = {
+            value: [
+              key,
+              data[key]
+            ],
+            children: []
+          };
+
+          if (data[key] === null) {
+            item.label = `<span>${key}:</span> <span style="color: grey;">null</span>`;
+          } else if (typeof data[key] === 'object' && Object.keys(data[key]).length === 0) {
+            item.label = `<span>${key}:</span> <span style="color: grey;">{}</span> <span style="font-size: smaller; color: grey;">(Object)</span>`;
+          } else if (typeof data[key] === 'object') {
+            item.label = `<span>${key}</span> <span style="font-size: smaller; color: grey;">(${Array.isArray(data[key]) ? 'Array' : 'Object'})</span>`;
+            item.children = convertToObjectArray(data[key]);
+          } else {
+            item.label = `<span>${key}:</span> <span style="color: ${color};">${data[key]}</span> <span style="font-size: smaller; color: grey;">(${typeof data[key]})</span>`;
+          }
+
+          return item;
+        });
+      }
+
+      function removeKeysFromObject(data, prefix) {
+        Object.keys(data).forEach(key => {
+          if (key.startsWith(prefix)) {
+            delete data[key];
+          }
+        });
+      }

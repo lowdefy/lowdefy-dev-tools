@@ -1,0 +1,24 @@
+{
+  "name": "@lowdefy/lowdefy-dev-tools",
+  "license": "MIT",
+  "packageManager": "pnpm@8.8.0",
+  "private": true,
+  "scripts": {
+    "changeset": "changeset",
+    "publish": "changeset publish",
+    "test": "pnpm -r test",
+    "update-packages": "pnpm up -i -r --latest"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.26.2",
+    "eslint": "8.53.0",
+    "eslint-config-prettier": "9.0.0",
+    "eslint-import-resolver-node": "0.3.9",
+    "eslint-plugin-import": "2.29.0",
+    "eslint-plugin-jsx-a11y": "6.8.0",
+    "eslint-plugin-prettier": "5.0.1",
+    "eslint-plugin-react": "7.33.2",
+    "eslint-plugin-react-hooks": "4.6.0",
+    "prettier": "^3.0.3"
+  }
+}

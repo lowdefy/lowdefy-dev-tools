@@ -1,0 +1,33 @@
+lowdefy: 4.2.1
+version: 0.0.0
+name: Test Dev Tools
+
+plugins:
+  - name: '@lowdefy/community-plugin-mongodb'
+    version: 2.2.1
+  - name: '@lowdefy/plugin-code-editor'
+    version: 'workspace:*'
+
+menus:
+  _ref: menus.yaml
+
+pages:
+  _ref:
+    resolver: insert_dev_tools.js
+    vars:
+      pages:
+        - _ref: test-dev-tools.yaml
+
+connections:
+  - id: test
+    type: MongoDBCollection
+    properties:
+      collection: test
+      changeLog:
+        collection: log-changes
+        meta:
+          user:
+            _user: true
+      databaseUri:
+        _secret: MONGODB_URI
+      write: true

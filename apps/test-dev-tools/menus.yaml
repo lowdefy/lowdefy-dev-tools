@@ -1,0 +1,7 @@
+- id: default
+  links:
+    - id: test-dev-tools
+      type: MenuLink
+      pageId: test-dev-tools
+      properties:
+        title: Testing Grounds

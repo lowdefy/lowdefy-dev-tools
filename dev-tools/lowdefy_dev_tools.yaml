@@ -1,0 +1,108 @@
+id: lowdefy_dev_tools
+type: Box
+style:
+  _object.assign:
+    - position: fixed
+      z-index: 1
+      bottom: 20
+    - _if:
+        test:
+          _eq:
+            - _state: lowdefy_dev_tools.placement
+            - left
+        then:
+          right: 20
+        else:
+          left: 20
+events:
+  onMount:
+    - id: set_color
+      type: SetState
+      params:
+        lowdefy_dev_tools.color:
+          _ref:
+            path: app_config.yaml
+            key: colors.primary
+        lowdefy_dev_tools.placement: left
+blocks:
+  - id: open_button
+    type: Button
+    properties:
+      title: Dev Tools
+      icon: FaTools
+      shape: round
+    events:
+      onClick:
+        - id: open_tools_drawer
+          type: CallMethod
+          params:
+            blockId: tools_drawer
+            method: toggleOpen
+  - id: tools_drawer
+    type: Drawer
+    layout:
+      contentGutter: 8
+    properties:
+      title: Lowdefy Dev Tools
+      width: 500
+      placement:
+        _if_none:
+          - _state: lowdefy_dev_tools.placement
+          - left
+      bodyStyle:
+        padding: 16
+      mask: false
+    areas:
+      extra:
+        blocks:
+          - id: toggle_placement
+            type: Button
+            properties:
+              hideTitle: true
+              icon:
+                _if:
+                  test:
+                    _eq:
+                      - _state: lowdefy_dev_tools.placement
+                      - left
+                  then: AiOutlineArrowRight
+                  else: AiOutlineArrowLeft
+              size: small
+            events:
+              onClick:
+                - id: set_placement
+                  type: SetState
+                  params:
+                    lowdefy_dev_tools.placement:
+                      _if:
+                        test:
+                          _eq:
+                            - _state: lowdefy_dev_tools.placement
+                            - left
+                        then: right
+                        else: left
+    blocks:
+      - id: tool_tabs
+        type: Tabs
+        properties:
+          tabType: card
+          tabs:
+            - key: state
+              title: State
+              icon: AiOutlineBars
+            - key: requests
+              title: Requests
+              icon: AiOutlineDatabase
+            # - key: code_editor
+            #   title: Code Editor
+            #   icon: AiOutlineCode
+        areas:
+          state:
+            blocks:
+              - _ref: ../../../lowdefy-dev-tools/dev-tools/view_state/view_state.yaml
+          requests:
+            blocks:
+              - _ref: ../../../lowdefy-dev-tools/dev-tools/view_requests/view_requests.yaml
+          # code_editor:
+          #   blocks:
+          #     - _ref: ../../../lowdefy-dev-tools/dev-tools/view_code_editor/view_code_editor.yaml

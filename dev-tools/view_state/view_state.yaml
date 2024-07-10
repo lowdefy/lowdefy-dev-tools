@@ -1,0 +1,358 @@
+id: view_state
+type: Box
+layout:
+  contentGutter: 8
+style:
+  padding: 0px 10px
+blocks:
+  - id: key_path
+    type: Html
+    visible:
+      _ne:
+        - _state: lowdefy_dev_tools.state.key
+        - null
+    properties:
+      html:
+        _nunjucks:
+          template: |
+            Key Path: <span style="color: {{ color }};">{{ key }}</span>
+          on:
+            key:
+              _state: lowdefy_dev_tools.state.key
+            color:
+              _state: lowdefy_dev_tools.color
+  - id: state_tabs
+    type: Tabs
+    properties:
+      tabs:
+        - key: state
+          title: State
+        - key: global
+          title: Global
+        - key: user
+          title: User
+      extraAreaKey: extra
+    events:
+      onMount:
+        - id: set_state_tabs
+          type: SetState
+          params:
+            lowdefy_dev_tools.state.tab: state
+      onTabClick:
+        - id: set_state_tabs
+          type: SetState
+          params:
+            lowdefy_dev_tools.state.tab:
+              _event: key
+            lowdefy_dev_tools.state.key: null
+            lowdefy_dev_tools.state.value: null
+            lowdefy_dev_tools.state.edit: false
+            lowdefy_dev_tools.state.edit_value: null
+            lowdefy_dev_tools.state.selected: null
+        - _ref: ../../../lowdefy-dev-tools/dev-tools/view_state/actions/set_options.yaml
+    areas:
+      extra:
+        blocks:
+          - id: toggle_button
+            type: Button
+            visible:
+              _ne:
+                - _state: lowdefy_dev_tools.state.tab
+                - user
+            properties:
+              hideTitle: true
+              icon:
+                _if:
+                  test:
+                    _eq:
+                      - _state: lowdefy_dev_tools.state.edit
+                      - true
+                  then: AiOutlineEye
+                  else: AiOutlineEdit
+              size: small
+              disabled:
+                _eq:
+                  - _state: lowdefy_dev_tools.state.key
+                  - null
+            events:
+              onClick:
+                - id: set_edit
+                  type: SetState
+                  params:
+                    lowdefy_dev_tools.state.edit:
+                      _not:
+                        _state: lowdefy_dev_tools.state.edit
+                    lowdefy_dev_tools.state.edit_value:
+                      _if:
+                        test:
+                          _js: |
+                            return (typeof state('lowdefy_dev_tools.state.value') === 'object');
+                        then:
+                          _yaml.stringify:
+                            - _state: lowdefy_dev_tools.state.value
+                        else:
+                          _state: lowdefy_dev_tools.state.value
+      state:
+        blocks:
+          - id: state_yaml
+            type: MarkdownWithCode
+            visible:
+              _and:
+                - _ne:
+                    - _state: lowdefy_dev_tools.state.key
+                    - null
+                - _ne:
+                    - _state: lowdefy_dev_tools.state.edit
+                    - true
+            style:
+              overflow-y: scroll
+              maxHeight: 250
+            properties:
+              content:
+                _nunjucks:
+                  template: |
+                    ```yaml
+                    {{ data | safe }}
+                    ```
+                  on:
+                    data:
+                      _yaml.stringify:
+                        - _state:
+                            _state: lowdefy_dev_tools.state.key
+      global:
+        blocks:
+          - id: global_yaml
+            type: MarkdownWithCode
+            visible:
+              _and:
+                - _ne:
+                    - _state: lowdefy_dev_tools.state.key
+                    - null
+                - _ne:
+                    - _state: lowdefy_dev_tools.state.edit
+                    - true
+            style:
+              overflow-y: scroll
+              maxHeight: 250
+            properties:
+              content:
+                _nunjucks:
+                  template: |
+                    ```yaml
+                    {{ data | safe }}
+                    ```
+                  on:
+                    data:
+                      _yaml.stringify:
+                        - _global:
+                            _state: lowdefy_dev_tools.state.key
+      user:
+        blocks:
+          - id: user_yaml
+            type: MarkdownWithCode
+            visible:
+              _and:
+                - _ne:
+                    - _state: lowdefy_dev_tools.state.key
+                    - null
+                - _ne:
+                    - _state: lowdefy_dev_tools.state.edit
+                    - true
+            style:
+              overflow-y: scroll
+              maxHeight: 250
+            properties:
+              content:
+                _nunjucks:
+                  template: |
+                    ```yaml
+                    {{ data | safe }}
+                    ```
+                  on:
+                    data:
+                      _yaml.stringify:
+                        - _user:
+                            _state: lowdefy_dev_tools.state.key
+  - id: edit_box
+    type: Box
+    visible:
+      _eq:
+        - _state: lowdefy_dev_tools.state.edit
+        - true
+    layout:
+      contentGutter: 8
+    blocks:
+      - id: lowdefy_dev_tools.state.edit_value
+        type: TextArea
+        properties:
+          label:
+            disabled: true
+      - id: update_state_button
+        type: Button
+        properties:
+          title: Update State
+        events:
+          onClick:
+            catch:
+              - id: throw_invalid
+                type: Throw
+                params:
+                  throw: true
+                  message: Invalid YAML syntax.
+            try:
+              - id: yaml_parse
+                type: SetState
+                params:
+                  lowdefy_dev_tools.state.value:
+                    _yaml.parse:
+                      - _if_none:
+                          - _state: lowdefy_dev_tools.state.edit_value
+                          - 'null'
+              - id: set_state_value
+                type: SetState
+                skip:
+                  _ne:
+                    - _state: lowdefy_dev_tools.state.tab
+                    - state
+                params:
+                  _js: |
+                    const key = state('lowdefy_dev_tools.state.key');
+                    const value = state('lowdefy_dev_tools.state.value');
+
+                    return { [key]: value };
+              - id: set_global_value
+                type: SetGlobal
+                skip:
+                  _ne:
+                    - _state: lowdefy_dev_tools.state.tab
+                    - global
+                params:
+                  _js: |
+                    const key = state('lowdefy_dev_tools.state.key');
+                    const value = state('lowdefy_dev_tools.state.value');
+
+                    return { [key]: value };
+              - _ref: ../../../lowdefy-dev-tools/dev-tools/view_state/actions/set_options.yaml
+              - id: reset
+                type: SetState
+                params:
+                  lowdefy_dev_tools.state.edit: false
+                  lowdefy_dev_tools.state.edit_value: null
+  - id: no_key_selected
+    type: Html
+    visible:
+      _eq:
+        - _array.length:
+            _if_none:
+              - _state: lowdefy_dev_tools.state.selected
+              - []
+        - 0
+    properties:
+      html: |
+        <div style="text-align: center; color:#d9d9d9; padding-bottom: 10px;">
+          <div style="font-size: 1.25rem;">No Selected Key</div>
+          <div >Select a key in the list to view its details.</div>
+        </div>
+  - id: divider
+    type: Divider
+  - id: lowdefy_dev_tools.state.selected
+    type: TreeSelector
+    properties:
+      options:
+        _if_none:
+          - _state: lowdefy_dev_tools.state.options
+          - []
+    events:
+      onChange:
+        - id: set_key
+          type: SetState
+          skip:
+            _lte:
+              - _array.length:
+                  _if_none:
+                    - _state: lowdefy_dev_tools.state.selected
+                    - []
+              - 0
+          params:
+            lowdefy_dev_tools.state.key:
+              _js: |
+                const selected_state = state('lowdefy_dev_tools.state.selected');
+
+                return generateNestedKeyPath(selected_state);
+
+                /*
+                  Assuming selected_state is an array structured:
+                  [ [ key1, value1 ], [ key2, value2 ], [ key3, value3 ], ... ]
+                  The function should return key3.key2.key1
+                  The later keys in the array are parent keys
+                  Return the nested key path
+                */
+                function generateNestedKeyPath(selected_state) {
+                  const reversedKeys = [];
+
+                  // Iterate through the selected_state array in reverse order
+                  for (let i = selected_state.length - 1; i >= 0; i--) {
+                    const [key] = selected_state[i];
+                    reversedKeys.push(key);
+                  }
+
+                  // Join the reversed keys to form the nested key path
+                  const nestedKeyPath = reversedKeys.join('.');
+
+                  return nestedKeyPath;
+                }
+        - id: set_value
+          type: SetState
+          skip:
+            _lte:
+              - _array.length:
+                  _if_none:
+                    - _state: lowdefy_dev_tools.state.selected
+                    - []
+              - 0
+          params:
+            _if:
+              test:
+                _eq:
+                  - _state: lowdefy_dev_tools.state.edit
+                  - true
+              then:
+                lowdefy_dev_tools.state.edit_value:
+                  _yaml.stringify:
+                    - _if:
+                        test:
+                          _lte:
+                            - _array.length:
+                                _state: lowdefy_dev_tools.state.selected
+                            - 0
+                        then: null
+                        else:
+                          _state: lowdefy_dev_tools.state.selected.0.1
+              else:
+                lowdefy_dev_tools.state.value:
+                  _yaml.stringify:
+                    - _if:
+                        test:
+                          _lte:
+                            - _array.length:
+                                _state: lowdefy_dev_tools.state.selected
+                            - 0
+                        then: null
+                        else:
+                          _state: lowdefy_dev_tools.state.selected.0.1
+        - id: reset
+          type: SetState
+          skip:
+            _gt:
+              - _array.length:
+                  _if_none:
+                    - _state: lowdefy_dev_tools.state.selected
+                    - []
+              - 0
+          params:
+            lowdefy_dev_tools.state.key: null
+            lowdefy_dev_tools.state.value: null
+            lowdefy_dev_tools.state.edit: false
+            lowdefy_dev_tools.state.edit_value: null
+      onMount:
+        - _ref: ../../../lowdefy-dev-tools/dev-tools/view_state/actions/set_options.yaml
